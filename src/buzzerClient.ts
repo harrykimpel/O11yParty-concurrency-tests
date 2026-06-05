@@ -69,6 +69,7 @@ export async function runBuzzerClient(
     sawBlazorError: false,
     sawBlazor404: false,
     circuitConnected: false,
+    sawBlazorNegotiate: false,
     webSocketOpened: false,
     webSocketFailed: false,
     sawReconnectModal: false,
@@ -106,22 +107,32 @@ export async function runBuzzerClient(
       return finish("load-failed", `goto failed: ${asMsg(e)}`);
     }
 
-    // --- Circuit readiness ---------------------------------------------------
-    // Every interaction rides the Blazor circuit. On App Runner the WebSocket is
-    // 403'd and SignalR falls back to long polling, which takes a few seconds to
-    // connect — interacting before then silently drops events. So we wait for the
-    // transport to actually connect. If it never does, that IS the failure we're
-    // testing for (the multi-instance long-poll 404), so we record it and stop.
+    // --- Readiness -----------------------------------------------------------
+    // Two app shapes are supported:
+    //  - Stateless buzzer (the fix): no /_blazor at all. Interactivity is plain JS,
+    //    usable as soon as the form is in the DOM — proceed immediately.
+    //  - Old Blazor Server app: every interaction rides the /_blazor circuit, which
+    //    on App Runner falls back to long polling and takes seconds to connect;
+    //    interacting before then drops events. Wait for the transport to connect.
+    // We distinguish by whether the page negotiates a circuit within a short grace.
     stage = "circuit";
     await page
       .locator("#firstName")
       .waitFor({ state: "visible", timeout: TIMEOUTS.circuitReady })
       .catch(() => {});
-    const connected = await waitForCircuit(page, signals, TIMEOUTS.circuitReady);
-    if (!connected) {
-      stopModalWatch();
-      return finish("circuit-not-connected", "Blazor transport never connected");
+
+    const graceEnd = Date.now() + 3000;
+    while (Date.now() < graceEnd && !signals.sawBlazorNegotiate) {
+      await page.waitForTimeout(150);
     }
+    if (signals.sawBlazorNegotiate) {
+      const connected = await waitForCircuit(page, signals, TIMEOUTS.circuitReady);
+      if (!connected) {
+        stopModalWatch();
+        return finish("circuit-not-connected", "Blazor transport never connected");
+      }
+    }
+    // else: stateless app — no circuit to wait for.
 
     // --- Lead gate -----------------------------------------------------------
     stage = "lead-gate";

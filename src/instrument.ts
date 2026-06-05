@@ -37,6 +37,12 @@ export interface CircuitSignals {
    * the long-poll 404s and this never flips true.
    */
   circuitConnected: boolean;
+  /**
+   * True if the page ever requested `/_blazor/negotiate` — i.e. it's the old
+   * Blazor Server (circuit) app. The fixed stateless buzzer never negotiates, so
+   * this stays false and the client skips the circuit wait entirely.
+   */
+  sawBlazorNegotiate: boolean;
   /** WebSocket opened on `/_blazor`. */
   webSocketOpened: boolean;
   /**
@@ -71,6 +77,7 @@ export function instrument(page: Page): CircuitSignals {
     sawBlazorError: false,
     sawBlazor404: false,
     circuitConnected: false,
+    sawBlazorNegotiate: false,
     webSocketOpened: false,
     webSocketFailed: false,
     sawReconnectModal: false,
@@ -78,6 +85,10 @@ export function instrument(page: Page): CircuitSignals {
     circuitConsoleErrors: [],
     consoleErrors: [],
   };
+
+  page.on("request", (req) => {
+    if (req.url().includes("/_blazor/negotiate")) signals.sawBlazorNegotiate = true;
+  });
 
   page.on("response", (res) => {
     const url = res.url();
