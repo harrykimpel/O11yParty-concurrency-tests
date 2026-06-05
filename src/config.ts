@@ -25,16 +25,20 @@ function envFloat(name: string, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
-/** Deployed buzzer (the one that 404'd at the Summit). Trailing slash trimmed. */
+// Deployed targets. Now Amazon ECS Express Mode (App Runner was deprecated).
+// The original App Runner URLs that produced the broken-state baseline were:
+//   buzzer https://9pzprw6pt4.us-east-1.awsapprunner.com
+//   game   https://7t94s2zjsd.us-east-1.awsapprunner.com
+// Override either with the BUZZER_URL / GAME_URL env vars. Trailing slash trimmed.
 export const BUZZER_URL = envStr(
   "BUZZER_URL",
-  "https://9pzprw6pt4.us-east-1.awsapprunner.com",
+  "https://o1-8e99538819ca48dd94d1cb48cca3645c.ecs.us-east-1.on.aws",
 ).replace(/\/+$/, "");
 
 /** Deployed game host app. */
 export const GAME_URL = envStr(
   "GAME_URL",
-  "https://7t94s2zjsd.us-east-1.awsapprunner.com",
+  "https://o1-d00cecaddd4b4c298a7f9408856e06ca.ecs.us-east-1.on.aws",
 ).replace(/\/+$/, "");
 
 /** Total concurrent buzzer clients to simulate (peak). */
