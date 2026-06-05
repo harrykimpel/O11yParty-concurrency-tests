@@ -1,0 +1,22 @@
+{
+  "name": "o11yparty-concurrency-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Concurrency / load tests that drive real Blazor Server circuits against the deployed O11yParty buzzer + game on AWS App Runner, to reproduce and later verify the /_blazor affinity 404 failure.",
+  "type": "module",
+  "scripts": {
+    "buzzer:load": "tsx src/buzzer-load.ts",
+    "game:e2e": "tsx src/game-e2e.ts",
+    "baseline": "cross-env PASS_THRESHOLD=0 tsx src/buzzer-load.ts && cross-env PASS_THRESHOLD=0 tsx src/game-e2e.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "cross-env": "^7.0.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
